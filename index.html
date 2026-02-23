@@ -2,90 +2,66 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Malla Curricular</title>
+<title>Malla Interactiva</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
 
 <style>
 body{
   margin:0;
-  font-family:'Poppins', sans-serif;
   background:#0f172a;
+  font-family:Arial, sans-serif;
   color:white;
-  overflow:hidden;
 }
 
-header{
-  padding:20px;
-  text-align:center;
-  background:#0b1220;
-  box-shadow:0 4px 15px rgba(0,0,0,0.4);
+#cy{
+  width:100%;
+  height:85vh;
+  display:block;
 }
 
-h1{
-  margin:0;
-  font-weight:600;
-}
-
-#progress-wrapper{
-  width:60%;
-  margin:15px auto 5px auto;
+#progress-container{
+  width:90%;
+  margin:15px auto;
   background:#1e293b;
-  border-radius:20px;
+  border-radius:8px;
   overflow:hidden;
 }
 
 #progress-bar{
-  height:14px;
+  height:18px;
   width:0%;
-  background:#00aaff;
-  transition:0.4s;
+  background:#00ffaa;
+  transition:0.3s;
 }
 
-#progress-text{
+#progress-text, #time-remaining{
+  text-align:center;
+  margin-top:5px;
   font-size:14px;
-  color:#94a3b8;
-  margin-bottom:5px;
-}
-
-#graph-container{
-  width:100%;
-  height:80vh;
-  overflow-x:auto;
-  overflow-y:hidden;
-}
-
-#cy{
-  width:4200px;
-  height:100%;
 }
 </style>
 </head>
+
 <body>
 
-<header>
-  <h1>Malla Curricular</h1>
-
-  <div id="progress-wrapper">
-    <div id="progress-bar"></div>
-  </div>
-  <div id="progress-text">0% completado</div>
-</header>
-
-<div id="graph-container">
-  <div id="cy"></div>
+<div id="progress-container">
+  <div id="progress-bar"></div>
 </div>
+<div id="progress-text"></div>
+<div id="time-remaining"></div>
+
+<div id="cy"></div>
 
 <script>
 
-// =============================
-// PEGA AQUÍ TU LISTA COMPLETA
-// =============================
+// ===============================
+// CONFIGURA TUS CURSOS AQUÍ
+// ===============================
 
 const cursos = {
 
- // CICLO 0
+  // CICLO 0
 "183111": {nombre:"EDP II", ciclo:0, prereq:["183081","183071"]},
 "183112": {nombre:"Análisis Complejo Aplicado", ciclo:0, prereq:["183051"]},
 "183113": {nombre:"Ecuaciones Integrales", ciclo:0, prereq:["183081"]},
@@ -164,103 +140,161 @@ const cursos = {
 
 };
 
-// =============================
-// CONFIGURACIÓN DE POSICIÓN
-// =============================
+let aprobados = new Set();
 
-function cicloPos(c){
-  return c === 0 ? 11 : c;
-}
+// ===============================
+// GENERAR POSICIONES
+// ===============================
 
-const spacingX = 320;
-const spacingY = 150;
+let elements = [];
 
-let contador = {};
-let elementos = [];
+const separacionX = 220;
+const separacionY = 120;
+const inicioX = 150;
+const inicioY = 160;
+
+let contadorPorCiclo = {};
+let ciclosDetectados = new Set();
 
 Object.keys(cursos).forEach(id=>{
-  const curso = cursos[id];
-  const col = cicloPos(curso.ciclo);
 
-  if(!contador[col]) contador[col]=0;
+  const ciclo = cursos[id].ciclo;
+  ciclosDetectados.add(ciclo);
 
-  elementos.push({
-    data:{ id:id, label:curso.nombre },
-    position:{
-      x: col * spacingX,
-      y: 150 + contador[col]*spacingY
-    }
+  if(!contadorPorCiclo[ciclo]){
+    contadorPorCiclo[ciclo] = 0;
+  }
+
+  const posX = inicioX + (ciclo-1) * separacionX;
+  const posY = inicioY + contadorPorCiclo[ciclo] * separacionY;
+
+  contadorPorCiclo[ciclo]++;
+
+  elements.push({
+    data:{ id:id, label:cursos[id].nombre },
+    position:{ x:posX, y:posY }
   });
 
-  contador[col]++;
+  cursos[id].prereq.forEach(p=>{
+    elements.push({
+      data:{ source:p, target:id }
+    });
+  });
+
 });
 
-// =============================
-// INICIALIZAR CYTOSCAPE
-// =============================
+// ===============================
+// AGREGAR TÍTULOS DE CICLO
+// ===============================
+
+ciclosDetectados.forEach(ciclo=>{
+
+  if(ciclo === 0) return;
+
+  const posX = inicioX + (ciclo-1) * separacionX;
+
+  elements.push({
+    data:{ id:"titulo_"+ciclo, label:"CICLO " + ciclo },
+    position:{ x:posX, y:80 },
+    selectable:false,
+    grabbable:false
+  });
+
+});
+
+// ===============================
+// CREAR CYTOSCAPE
+// ===============================
 
 const cy = cytoscape({
   container: document.getElementById('cy'),
-  elements: elementos,
-  layout:{ name:'preset' },
-  minZoom:0.7,
-  maxZoom:2.2,
-  wheelSensitivity:0.15,
+
+  autoungrabify: true,
+  autolock: true,
+
+  zoomingEnabled: true,
+  userZoomingEnabled: true,
+
+  panningEnabled: true,
+  userPanningEnabled: false,
+
+  minZoom: 0.8,
+  maxZoom: 2.5,
+
+  layout:{ name:"preset" },
+
   style:[
     {
       selector:'node',
       style:{
+        'background-color':'#1e293b',
         'label':'data(label)',
-        'text-wrap':'wrap',
-        'text-max-width':200,
+        'color':'#94a3b8',
         'text-valign':'center',
         'text-halign':'center',
-        'font-size':15,
-        'background-color':'#1e293b',
+        'width':140,
+        'height':55,
+        'font-size':10,
+        'border-width':2,
         'border-color':'#334155',
-        'border-width':1,
-        'color':'#cbd5e1',
-        'shape':'roundrectangle',
-        'width':260,
-        'height':95
+        'shape':'roundrectangle'
+      }
+    },
+    {
+      selector:'node[id^="titulo_"]',
+      style:{
+        'background-color':'transparent',
+        'border-width':0,
+        'font-size':16,
+        'color':'#00ffaa',
+        'width':150,
+        'height':30
+      }
+    },
+    {
+      selector:'edge',
+      style:{
+        'width':2,
+        'line-color':'#334155',
+        'target-arrow-color':'#334155',
+        'target-arrow-shape':'triangle',
+        'curve-style':'bezier'
       }
     }
-  ]
+  ],
+
+  elements:elements
 });
 
-// Ajuste automático inicial
-cy.ready(()=>{
-  cy.fit(cy.nodes(), 100);
+// Centrar automáticamente
+cy.ready(function(){
+  cy.fit(undefined, 120);
+  cy.zoom(1.05);
+  cy.center();
 });
 
-// =============================
-// TÍTULOS DE CICLO
-// =============================
+// ===============================
+// CLICK PARA APROBAR
+// ===============================
 
-for(let i=1;i<=11;i++){
-  const nombre = (i===11) ? "Ciclo 0" : "Ciclo "+i;
+cy.on('tap','node', function(evt){
 
-  cy.add({
-    group:'nodes',
-    data:{ id:'titulo'+i, label:nombre },
-    position:{ x:i*spacingX, y:60 },
-    selectable:false,
-    grabbable:false,
-    style:{
-      'background-opacity':0,
-      'border-width':0,
-      'color':'#00aaff',
-      'font-size':20,
-      'font-weight':'600'
-    }
-  });
-}
+  const id = evt.target.id();
 
-// =============================
-// LÓGICA ACADÉMICA
-// =============================
+  if(id.startsWith("titulo_")) return;
 
-let aprobados = new Set();
+  if(aprobados.has(id)){
+    aprobados.delete(id);
+  } else {
+    aprobados.add(id);
+  }
+
+  actualizar();
+});
+
+// ===============================
+// FUNCIÓN ACTUALIZAR
+// ===============================
 
 function actualizar(){
 
@@ -272,11 +306,67 @@ function actualizar(){
   document.getElementById("progress-text").innerText =
     porcentaje+"% completado ("+completados+"/"+total+")";
 
+  let ciclos = {};
+
+  Object.keys(cursos).forEach(id=>{
+    const c = cursos[id].ciclo;
+    if(c === 0) return;
+
+    if(!ciclos[c]) ciclos[c] = [];
+    ciclos[c].push(id);
+  });
+
+  let cicloCompletoMax = 0;
+
+  const ciclosOrdenados = Object.keys(ciclos)
+    .map(Number)
+    .sort((a,b)=>a-b);
+
+  for(let ciclo of ciclosOrdenados){
+
+    const cursosDelCiclo = ciclos[ciclo];
+
+    const todosAprobados = cursosDelCiclo.every(id =>
+      aprobados.has(id)
+    );
+
+    if(todosAprobados){
+      cicloCompletoMax = ciclo;
+    } else {
+      break;
+    }
+  }
+
+  let añoActual = cicloCompletoMax === 0
+    ? 1
+    : Math.ceil(cicloCompletoMax / 2);
+
+  let añosTotales = 5;
+  let añosRestantes = añosTotales - añoActual;
+
+  if(añosRestantes < 0) añosRestantes = 0;
+
+  let mensaje;
+
+  if(cicloCompletoMax === 0){
+    mensaje = "Aún no has cerrado ningún ciclo completo.";
+  }
+  else if(cicloCompletoMax === 10){
+    mensaje = "Has completado todos los ciclos 🎓";
+  }
+  else{
+    mensaje =
+      `Has cerrado hasta ciclo ${cicloCompletoMax}. ` +
+      `Vas en ${añoActual}° año — te quedan ${añosRestantes} año(s) aprox.`;
+  }
+
+  document.getElementById("time-remaining").innerText = mensaje;
+
   cy.nodes().forEach(n=>{
 
-    if(n.id().startsWith("titulo")) return;
-
     const id = n.id();
+    if(id.startsWith("titulo_")) return;
+
     const prereq = cursos[id].prereq;
 
     if(aprobados.has(id)){
@@ -305,23 +395,6 @@ function actualizar(){
 
 }
 
-cy.on('tap','node',evt=>{
-  const id = evt.target.id();
-
-  if(id.startsWith("titulo")) return;
-
-  if(aprobados.has(id)){
-    aprobados.delete(id);
-  } else {
-    aprobados.add(id);
-  }
-
-  actualizar();
-});
-
-actualizar();
-
 </script>
-
 </body>
 </html>
