@@ -8,7 +8,7 @@
 <style>
 body{
   margin:0;
-  background:radial-gradient(circle at center,#0f0f1f,#05050d);
+  background:radial-gradient(circle at center,#0c0c18,#05050d);
   font-family:Arial, sans-serif;
   overflow:hidden;
 }
@@ -22,27 +22,27 @@ body{
   position:fixed;
   top:15px;
   right:15px;
-  background:rgba(0,0,0,0.85);
+  background:rgba(10,10,20,0.9);
   padding:15px;
-  border-radius:12px;
+  border-radius:14px;
   color:white;
   font-size:14px;
-  backdrop-filter:blur(6px);
+  box-shadow:0 0 20px rgba(0,0,0,0.6);
 }
 
 button{
   margin-top:8px;
-  background:#111;
-  border:1px solid #444;
+  background:#141428;
+  border:1px solid #333;
   color:white;
-  padding:6px 10px;
-  border-radius:6px;
+  padding:6px 12px;
+  border-radius:8px;
   cursor:pointer;
   transition:0.2s;
 }
 
 button:hover{
-  background:#222;
+  background:#1f1f3a;
 }
 </style>
 </head>
@@ -52,125 +52,120 @@ button:hover{
 
 <div class="panel">
 <b>Estados</b><br>
-<span style="color:#00ff88;">■ Aprobado</span><br>
-<span style="color:#00aaff;">■ Disponible</span><br>
-<span style="color:#666;">■ Bloqueado</span><br>
+<span style="color:#00ffcc;">■ Activo</span><br>
+<span style="color:#888;">■ Inactivo</span><br>
+<button onclick="centrar()">Centrar</button><br>
 <button onclick="resetear()">Resetear</button>
 </div>
 
 <script>
 
 // =============================
-// CURSOS (CICLO 0 VA DESPUÉS DEL 10)
+// CURSOS (TODOS)
 // =============================
 
 const cursos = {
 
 // CICLO 0
-"183111": {nombre:"Ecuaciones Diferenciales Parciales II", ciclo:0, prereq:["183081","183071"]},
-"183112": {nombre:"Análisis Complejo y Aplicado", ciclo:0, prereq:["183051"]},
+"183111": {nombre:"EDP II", ciclo:0, prereq:["183081","183071"]},
+"183112": {nombre:"Análisis Complejo Aplicado", ciclo:0, prereq:["183051"]},
 "183113": {nombre:"Ecuaciones Integrales", ciclo:0, prereq:["183081"]},
-"183114": {nombre:"Análisis Complejo en CN", ciclo:0, prereq:["183112"]},
-"183115": {nombre:"Problemas Inversos", ciclo:0, prereq:["1803052"]}
+"183114": {nombre:"Análisis Complejo CN", ciclo:0, prereq:["183112"]},
+"183115": {nombre:"Problemas Inversos", ciclo:0, prereq:["1803052"]},
 
 // CICLO 1
 "CBE003": {nombre:"Economía General", ciclo:1, prereq:[]},
 "CBE004": {nombre:"Género y Sociedad", ciclo:1, prereq:[]},
 "CBO101": {nombre:"Lenguaje", ciclo:1, prereq:[]},
-"CBO102": {nombre:"Métodos de Estudio Universitario", ciclo:1, prereq:[]},
+"CBO102": {nombre:"Métodos de Estudio", ciclo:1, prereq:[]},
 "CBO103": {nombre:"Gestión Personal", ciclo:1, prereq:[]},
 "CBO104": {nombre:"Cálculo I", ciclo:1, prereq:[]},
 "CBO105": {nombre:"Matemática Básica", ciclo:1, prereq:[]},
 "CBO106": {nombre:"Biología", ciclo:1, prereq:[]},
 
 // CICLO 2
-"CBO201": {nombre:"Fundamentos de Investigación Científica", ciclo:2, prereq:[]},
-"CBO202": {nombre:"Medio Ambiente y Desarrollo Sostenible", ciclo:2, prereq:["CBO106"]},
-"CBO203": {nombre:"Realidad Nacional y Mundial", ciclo:2, prereq:[]},
+"CBO201": {nombre:"Fund. Investigación", ciclo:2, prereq:[]},
+"CBO202": {nombre:"Medio Ambiente", ciclo:2, prereq:["CBO106"]},
+"CBO203": {nombre:"Realidad Nacional", ciclo:2, prereq:[]},
 "CBO204": {nombre:"Cálculo II", ciclo:2, prereq:["CBO104"]},
-"CBO205": {nombre:"Química Inorgánica y Orgánica", ciclo:2, prereq:[]},
+"CBO205": {nombre:"Química", ciclo:2, prereq:[]},
 "CBO206": {nombre:"Física General", ciclo:2, prereq:[]},
 
 // CICLO 3
 "183031": {nombre:"Cálculo III", ciclo:3, prereq:["CBO204"]},
-"183032": {nombre:"Elementos de Álgebra y Geometría", ciclo:3, prereq:["CBO105","CBO104"]},
-"183033": {nombre:"Algorítmica y Fundamentos de Programación", ciclo:3, prereq:["CBO105"]},
-"183034": {nombre:"Matemática Discreta y Computacional", ciclo:3, prereq:["CBO105","CBO104"]},
+"183032": {nombre:"Álgebra y Geometría", ciclo:3, prereq:["CBO105","CBO104"]},
+"183033": {nombre:"Algorítmica", ciclo:3, prereq:["CBO105"]},
+"183034": {nombre:"Mat. Discreta", ciclo:3, prereq:["CBO105","CBO104"]},
 "183035": {nombre:"Inglés I", ciclo:3, prereq:[]},
 
 // CICLO 4
 "183041": {nombre:"Cálculo IV", ciclo:4, prereq:["183031"]},
 "183042": {nombre:"Álgebra", ciclo:4, prereq:["183032"]},
-"183043": {nombre:"Modelos Matemáticos de la Física", ciclo:4, prereq:["CBO204","CBO105","CBO206"]},
+"183043": {nombre:"Modelos Física", ciclo:4, prereq:["CBO204","CBO105","CBO206"]},
 "183044": {nombre:"Estructura de Datos", ciclo:4, prereq:["183033"]},
 "183045": {nombre:"Inglés II", ciclo:4, prereq:["183035"]},
 
 // CICLO 5
 "183051": {nombre:"Análisis Real", ciclo:5, prereq:["183031"]},
-"1803052": {nombre:"Ecuaciones Diferenciales Ordinarias", ciclo:5, prereq:["CBO204","183032"]},
-"183053": {nombre:"Base de Datos e Ingeniería de Software", ciclo:5, prereq:["183044"]},
-"183054": {nombre:"Métodos Numéricos y Programación I", ciclo:5, prereq:["CBO204","183042"]},
+"1803052": {nombre:"EDO", ciclo:5, prereq:["CBO204","183032"]},
+"183053": {nombre:"Base de Datos", ciclo:5, prereq:["183044"]},
+"183054": {nombre:"Métodos Numéricos I", ciclo:5, prereq:["CBO204","183042"]},
 "183055": {nombre:"Inglés III", ciclo:5, prereq:["183045"]},
 
 // CICLO 6
 "183061": {nombre:"Análisis Funcional I", ciclo:6, prereq:["183051","183042"]},
-"183062": {nombre:"Probabilidad e Inferencia Estadística", ciclo:6, prereq:["CBO204","183032"]},
-"183063": {nombre:"Métodos Numéricos y Programación II", ciclo:6, prereq:["183054","1803052"]},
+"183062": {nombre:"Probabilidad", ciclo:6, prereq:["CBO204","183032"]},
+"183063": {nombre:"Métodos Numéricos II", ciclo:6, prereq:["183054","1803052"]},
 "183064": {nombre:"Sistemas Operativos", ciclo:6, prereq:["183053"]},
-"183065": {nombre:"Técnicas de Modelamiento", ciclo:6, prereq:["183043"]},
+"183065": {nombre:"Modelamiento", ciclo:6, prereq:["183043"]},
 
 // CICLO 7
 "183071": {nombre:"Análisis Funcional II", ciclo:7, prereq:["183061","1803052"]},
 "183072": {nombre:"Computación Gráfica", ciclo:7, prereq:["183042"]},
-"183073": {nombre:"Modelos Matemáticos de la Ciencia I", ciclo:7, prereq:["1803052","183065"]},
-"183074": {nombre:"Inteligencia Artificial", ciclo:7, prereq:["183064"]},
+"183073": {nombre:"Modelos I", ciclo:7, prereq:["1803052","183065"]},
+"183074": {nombre:"IA", ciclo:7, prereq:["183064"]},
 
 // CICLO 8
-"183081": {nombre:"Ecuaciones Diferenciales Parciales I", ciclo:8, prereq:["1803052"]},
-"183082": {nombre:"Modelos Matemáticos de la Ciencia II", ciclo:8, prereq:["183073"]},
-"183083": {nombre:"Redes, Arquitectura y Comunicaciones", ciclo:8, prereq:["183064"]},
-"183084": {nombre:"Proyecto de Investigación", ciclo:8, prereq:[]},
+"183081": {nombre:"EDP I", ciclo:8, prereq:["1803052"]},
+"183082": {nombre:"Modelos II", ciclo:8, prereq:["183073"]},
+"183083": {nombre:"Redes", ciclo:8, prereq:["183064"]},
+"183084": {nombre:"Proyecto Investigación", ciclo:8, prereq:[]},
 
 // CICLO 9
 "183091": {nombre:"Optimización", ciclo:9, prereq:["183051","183042"]},
-"183092": {nombre:"Modelos Matemáticos de la Ciencia III", ciclo:9, prereq:["183082"]},
-"183093": {nombre:"Métodos Numéricos y Programación III", ciclo:9, prereq:["183063","183081"]},
-"183094": {nombre:"Desarrollo del Proyecto de Investigación", ciclo:9, prereq:[]},
+"183092": {nombre:"Modelos III", ciclo:9, prereq:["183082"]},
+"183093": {nombre:"Métodos Numéricos III", ciclo:9, prereq:["183063","183081"]},
+"183094": {nombre:"Desarrollo Proyecto", ciclo:9, prereq:[]},
 
 // CICLO 10
-"183101": {nombre:"Modelos Matemáticos de la Ciencia IV", ciclo:10, prereq:["183092"]},
-"183102": {nombre:"Formulación, Evaluación y Gestión de Proyectos", ciclo:10, prereq:["183083"]},
-"183103": {nombre:"Práctica Pre Profesional", ciclo:10, prereq:[]},
-"183104": {nombre:"Presentación y Sustentación del Proyecto", ciclo:10, prereq:["183094"]},
+"183101": {nombre:"Modelos IV", ciclo:10, prereq:["183092"]},
+"183102": {nombre:"Gestión Proyectos", ciclo:10, prereq:["183083"]},
+"183103": {nombre:"Práctica", ciclo:10, prereq:[]},
+"183104": {nombre:"Sustentación", ciclo:10, prereq:["183094"]},
 
 };
 
-let aprobados = new Set(JSON.parse(localStorage.getItem("aprobados") || "[]"));
+// =============================
+// LAYOUT
+// =============================
+
 const elements = [];
-const spacingX = 300;
+const spacingX = 260;
 const spacingY = 110;
 const contador = {};
 
-// Mapeo visual: ciclo 0 será el último
-function posicionCiclo(ciclo){
-  if(ciclo === 0) return 11; // después del 10
-  return ciclo;
-}
+function pos(c){ return c===0?11:c; }
 
 Object.entries(cursos).forEach(([id,data])=>{
-  const cicloVisual = posicionCiclo(data.ciclo);
-
-  if(!contador[cicloVisual]) contador[cicloVisual]=0;
+  const c = pos(data.ciclo);
+  if(!contador[c]) contador[c]=0;
 
   elements.push({
     data:{id:id,label:data.nombre},
-    position:{
-      x:cicloVisual*spacingX,
-      y:contador[cicloVisual]*spacingY+80
-    }
+    position:{ x:c*spacingX, y:contador[c]*spacingY+80 }
   });
 
-  contador[cicloVisual]++;
+  contador[c]++;
 
   data.prereq.forEach(p=>{
     elements.push({data:{source:p,target:id}});
@@ -181,9 +176,9 @@ const cy = cytoscape({
   container: document.getElementById('cy'),
   elements: elements,
   layout:{name:'preset'},
-  minZoom:0.4,
-  maxZoom:2.5,
-  wheelSensitivity:0.2,
+  minZoom:0.3,
+  maxZoom:3,
+  wheelSensitivity:0.25,
   style:[
     {
       selector:'node',
@@ -191,85 +186,85 @@ const cy = cytoscape({
         'label':'data(label)',
         'text-wrap':'wrap',
         'text-max-width':150,
+        'font-size':9,
+        'color':'#aaa',
         'text-valign':'center',
         'text-halign':'center',
-        'font-size':10,
-        'color':'white',
         'width':180,
         'height':60,
         'shape':'roundrectangle',
-        'background-fill':'linear-gradient',
-        'background-gradient-stop-colors':'#3a3a4f #1a1a2e',
-        'background-gradient-stop-positions':'0% 100%',
+        'background-color':'#1b1b2d',
+        'border-width':1,
+        'border-color':'#333'
+      }
+    },
+    {
+      selector:'node.activo',
+      style:{
+        'background-color':'#003344',
+        'border-color':'#00ffcc',
         'border-width':2,
-        'border-color':'#555',
-        'shadow-blur':20,
-        'shadow-color':'#000',
-        'shadow-offset-x':4,
-        'shadow-offset-y':6
+        'color':'#ffffff'
       }
     },
     {
       selector:'edge',
       style:{
-        'width':2,
-        'curve-style':'bezier',
-        'line-color':'#444',
-        'target-arrow-color':'#444',
-        'target-arrow-shape':'triangle'
+        'width':1.5,
+        'line-color':'#333',
+        'target-arrow-color':'#333',
+        'target-arrow-shape':'triangle',
+        'curve-style':'bezier'
+      }
+    },
+    {
+      selector:'edge.activo',
+      style:{
+        'line-color':'#00ffcc',
+        'target-arrow-color':'#00ffcc',
+        'width':2.5
       }
     }
   ]
 });
 
 // =============================
-// ESTADOS VISUALES
+// INTERACCIÓN
 // =============================
 
-function actualizar(){
-  cy.nodes().forEach(n=>{
-    const id=n.id();
-    const req=cursos[id].prereq;
-
-    if(aprobados.has(id)){
-      n.style({
-        'background-gradient-stop-colors':'#00ff88 #007744',
-        'border-color':'#00ff88',
-        'shadow-color':'#00ff88'
-      });
-    }
-    else if(req.every(r=>aprobados.has(r))){
-      n.style({
-        'background-gradient-stop-colors':'#00aaff #003366',
-        'border-color':'#00aaff',
-        'shadow-color':'#00aaff'
-      });
-    }
-    else{
-      n.style({
-        'background-gradient-stop-colors':'#3a3a4f #1a1a2e',
-        'border-color':'#555',
-        'shadow-color':'#000'
-      });
-    }
-  });
-
-  localStorage.setItem("aprobados",JSON.stringify([...aprobados]));
-}
+let activos = new Set();
 
 cy.on('tap','node',evt=>{
-  const id=evt.target.id();
-  if(aprobados.has(id)) aprobados.delete(id);
-  else aprobados.add(id);
-  actualizar();
+  const node = evt.target;
+  const id = node.id();
+
+  if(activos.has(id)){
+    activos.delete(id);
+    node.removeClass('activo');
+  }else{
+    activos.add(id);
+    node.addClass('activo');
+  }
+
+  cy.edges().forEach(e=>{
+    if(activos.has(e.source().id()) && activos.has(e.target().id()))
+      e.addClass('activo');
+    else
+      e.removeClass('activo');
+  });
 });
 
 function resetear(){
-  aprobados.clear();
-  actualizar();
+  activos.clear();
+  cy.nodes().removeClass('activo');
+  cy.edges().removeClass('activo');
 }
 
-actualizar();
+function centrar(){
+  cy.fit();
+}
+
+cy.fit();
 
 </script>
 </body>
