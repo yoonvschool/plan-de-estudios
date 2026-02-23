@@ -2,178 +2,219 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Malla Interactiva</title>
-
+<title>Malla Estratégica - Majo</title>
 <script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
 
 <style>
 body {
     margin: 0;
     background: #0f0f0f;
-    color: white;
     font-family: Arial, sans-serif;
+    color: white;
+}
+
+#topbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: #1a1a1a;
+    padding: 10px;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 #cy {
     width: 100%;
     height: 100vh;
-    display: block;
+    margin-top: 50px;
+}
+
+button {
+    background: #ff2d2d;
+    border: none;
+    padding: 6px 12px;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    opacity: 0.8;
 }
 </style>
 </head>
 
 <body>
+
+<div id="topbar">
+    <div id="progreso">Progreso: 0%</div>
+    <button onclick="resetear()">Resetear carrera</button>
+</div>
+
 <div id="cy"></div>
 
 <script>
 
+// ========================
+// CURSOS CON CICLOS
+// ========================
+
 const cursos = {
-"CBO104 Cálculo I": [],
-"CBO105 Matemática Básica": [],
-"CBO106 Biología": [],
-"CBO101 Lenguaje": [],
-"CBO102 Métodos de Estudio Universitario": [],
-"CBO103 Gestión Personal": [],
-"CBO206 Física I": [],
 
-"CBO204 Cálculo II": ["CBO104 Cálculo I"],
-"183031 Cálculo III": ["CBO204 Cálculo II"],
-"183041 Cálculo IV": ["183031 Cálculo III"],
-"183051 Análisis Real": ["183031 Cálculo III"],
-"183061 Análisis Funcional I": ["183051 Análisis Real"],
-"183071 Análisis Funcional II": ["183061 Análisis Funcional I"],
-"183091 Optimización": ["183051 Análisis Real"],
-"183052 Ecuaciones Diferenciales Ordinarias": ["CBO204 Cálculo II", "183032 Elementos de Álgebra y Geometría"],
-"183081 Ecuaciones Diferenciales Parciales I": ["183052 Ecuaciones Diferenciales Ordinarias"],
+"CBO104 Cálculo I": { ciclo:1, prereq:[] },
+"CBO105 Matemática Básica": { ciclo:1, prereq:[] },
+"CBO106 Biología": { ciclo:1, prereq:[] },
+"CBO101 Lenguaje": { ciclo:1, prereq:[] },
+"CBO102 Métodos de Estudio Universitario": { ciclo:1, prereq:[] },
+"CBO103 Gestión Personal": { ciclo:1, prereq:[] },
 
-"183032 Elementos de Álgebra y Geometría": ["CBO105 Matemática Básica"],
-"183033 Algorítmica": ["CBO105 Matemática Básica"],
-"183034 Matemática Discreta": ["CBO105 Matemática Básica"],
-"183042 Álgebra": ["183032 Elementos de Álgebra y Geometría"],
-"183062 Probabilidad e Inferencia": ["183032 Elementos de Álgebra y Geometría"],
-"183044 Estructura de Datos": ["183033 Algorítmica"],
-"183053 Base de Datos e Ingeniería de Software": ["183044 Estructura de Datos"],
-"183064 Sistemas Operativos": ["183053 Base de Datos e Ingeniería de Software"],
-"183074 Inteligencia Artificial": ["183064 Sistemas Operativos"],
-"183083 Redes": ["183064 Sistemas Operativos"],
+"CBO206 Física I": { ciclo:2, prereq:[] },
+"CBO204 Cálculo II": { ciclo:2, prereq:["CBO104 Cálculo I"] },
+"183032 Elementos Álgebra": { ciclo:2, prereq:["CBO105 Matemática Básica"] },
+"183033 Algorítmica": { ciclo:2, prereq:["CBO105 Matemática Básica"] },
 
-"183043 Modelos Matemáticos de la Física": ["CBO105 Matemática Básica", "CBO204 Cálculo II", "CBO206 Física I"],
-"183065 Técnicas de Modelamiento": ["183043 Modelos Matemáticos de la Física"],
-"183073 Modelos Matemáticos de la Ciencia I": ["183065 Técnicas de Modelamiento", "183052 Ecuaciones Diferenciales Ordinarias"],
-"183082 Modelos de la Ciencia II": ["183073 Modelos Matemáticos de la Ciencia I"],
-"183092 Modelos de la Ciencia III": ["183082 Modelos de la Ciencia II"],
-"183101 Modelos de la Ciencia IV": ["183092 Modelos de la Ciencia III"],
+"183031 Cálculo III": { ciclo:3, prereq:["CBO204 Cálculo II"] },
+"183044 Estructura de Datos": { ciclo:3, prereq:["183033 Algorítmica"] },
 
-"183084 Proyecto de Investigación": [],
-"183094 Desarrollo del Proyecto de Investigación": [],
-"183104 Presentación y Sustentación": ["183094 Desarrollo del Proyecto de Investigación"],
-"183103 Práctica Pre Profesional": [],
-"183102 Gestión de Proyectos": ["183083 Redes"],
+"183041 Cálculo IV": { ciclo:4, prereq:["183031 Cálculo III"] },
+"183051 Análisis Real": { ciclo:4, prereq:["183031 Cálculo III"] },
 
-"183111 EDP II": ["183081 Ecuaciones Diferenciales Parciales I", "183071 Análisis Funcional II"],
-"183112 Análisis Complejo": ["183051 Análisis Real"],
-"183131 Sistemas Inteligentes": ["183074 Inteligencia Artificial"]
+"183061 Análisis Funcional I": { ciclo:5, prereq:["183051 Análisis Real"] },
+"183052 EDO": { ciclo:5, prereq:["CBO204 Cálculo II","183032 Elementos Álgebra"] },
+
+"183071 Análisis Funcional II": { ciclo:6, prereq:["183061 Análisis Funcional I"] },
+"183081 EDP I": { ciclo:6, prereq:["183052 EDO"] },
+
+"183111 EDP II": { ciclo:7, prereq:["183081 EDP I","183071 Análisis Funcional II"] },
+
+"183074 Inteligencia Artificial": { ciclo:7, prereq:["183044 Estructura de Datos"] }
+
 };
 
-let elements = [];
-let aprobados = new Set();
+// ========================
+// ESTADO
+// ========================
 
-Object.keys(cursos).forEach(curso => {
-    elements.push({ data: { id: curso, label: curso } });
+let aprobados = new Set(JSON.parse(localStorage.getItem("aprobados")) || []);
+let elements = [];
+
+// Crear nodos
+Object.entries(cursos).forEach(([nombre,data]) => {
+    elements.push({
+        data: {
+            id: nombre,
+            ciclo: data.ciclo
+        }
+    });
 });
 
-Object.entries(cursos).forEach(([curso, prereqs]) => {
-    prereqs.forEach(pr => {
+// Crear flechas
+Object.entries(cursos).forEach(([nombre,data]) => {
+    data.prereq.forEach(pr => {
         elements.push({
-            data: {
-                source: pr,
-                target: curso
-            }
+            data: { source: pr, target: nombre }
         });
     });
 });
 
+// ========================
+// GRAFO
+// ========================
+
 let cy = cytoscape({
     container: document.getElementById('cy'),
-
     elements: elements,
 
     style: [
         {
             selector: 'node',
             style: {
-                'background-color': '#555',
-                'label': 'data(label)',
-                'color': '#fff',
+                'background-color': '#444',
+                'label': 'data(id)',
                 'text-wrap': 'wrap',
-                'text-max-width': '150px',
-                'font-size': '10px'
+                'text-max-width': 120,
+                'font-size': 9,
+                'color': '#fff',
+                'width': 45,
+                'height': 45
             }
         },
         {
             selector: 'edge',
             style: {
                 'width': 2,
-                'line-color': '#888',
-                'target-arrow-color': '#888',
+                'line-color': '#666',
+                'target-arrow-color': '#666',
                 'target-arrow-shape': 'triangle',
                 'curve-style': 'bezier'
             }
         },
-        {
-            selector: '.aprobado',
-            style: {
-                'background-color': '#00ff88'
-            }
-        },
-        {
-            selector: '.disponible',
-            style: {
-                'background-color': '#ff3b3b'
-            }
-        }
+        { selector: '.aprobado', style: { 'background-color': '#00ff88' } },
+        { selector: '.disponible', style: { 'background-color': '#ff2d2d' } },
+        { selector: '.cuello', style: { 'border-width': 3, 'border-color': '#ffd700' } }
     ],
 
     layout: {
         name: 'breadthfirst',
         directed: true,
-        padding: 10
+        padding: 10,
+        spacingFactor: 1.2
     }
 });
+
+// ========================
+// LÓGICA
+// ========================
 
 function puedeLlevar(curso) {
-    return cursos[curso].every(pr => aprobados.has(pr));
+    return cursos[curso].prereq.every(pr => aprobados.has(pr));
 }
 
-function actualizarEstados() {
-    cy.nodes().forEach(node => {
-        node.removeClass('aprobado');
-        node.removeClass('disponible');
+function actualizar() {
 
-        const nombre = node.id();
+    cy.nodes().forEach(n => {
+        n.removeClass('aprobado disponible cuello');
 
-        if (aprobados.has(nombre)) {
-            node.addClass('aprobado');
-        } else if (puedeLlevar(nombre)) {
-            node.addClass('disponible');
+        const id = n.id();
+
+        if (aprobados.has(id)) {
+            n.addClass('aprobado');
+        } else if (puedeLlevar(id)) {
+            n.addClass('disponible');
+        }
+
+        // Detectar cuello de botella (si desbloquea 3+ cursos)
+        if (cy.edges(`[source = "${id}"]`).length >= 3) {
+            n.addClass('cuello');
         }
     });
+
+    // Actualizar progreso
+    let total = Object.keys(cursos).length;
+    let porcentaje = Math.round((aprobados.size / total) * 100);
+    document.getElementById("progreso").innerText =
+        `Progreso: ${porcentaje}% (${aprobados.size}/${total})`;
+
+    localStorage.setItem("aprobados", JSON.stringify([...aprobados]));
 }
 
-cy.on('tap', 'node', function(evt) {
-    const nombre = evt.target.id();
-
-    if (puedeLlevar(nombre)) {
-        if (aprobados.has(nombre)) {
-            aprobados.delete(nombre);
-        } else {
-            aprobados.add(nombre);
-        }
-        actualizarEstados();
+cy.on('tap','node', evt => {
+    let id = evt.target.id();
+    if (puedeLlevar(id)) {
+        if (aprobados.has(id)) aprobados.delete(id);
+        else aprobados.add(id);
+        actualizar();
     }
 });
 
-actualizarEstados();
+function resetear(){
+    aprobados.clear();
+    actualizar();
+}
+
+actualizar();
 
 </script>
 </body>
