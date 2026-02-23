@@ -12,10 +12,11 @@ body{
   background:#0f172a;
   font-family:Arial, sans-serif;
   color:white;
+  overflow:hidden;
 }
 
 #cy{
-  width:100%;
+  width:100vw;
   height:85vh;
   display:block;
 }
@@ -138,20 +139,21 @@ const cursos = {
 "183103": {nombre:"Práctica", ciclo:10, prereq:[]},
 "183104": {nombre:"Sustentación", ciclo:10, prereq:["183094"]},
 
+  // agrega tus ciclos reales aquí
 };
 
 let aprobados = new Set();
 
 // ===============================
-// GENERAR POSICIONES
+// GENERAR POSICIONES POR CICLO
 // ===============================
 
 let elements = [];
 
-const separacionX = 220;
+const separacionX = 240;
 const separacionY = 120;
-const inicioX = 150;
-const inicioY = 160;
+const inicioX = 200;
+const inicioY = 180;
 
 let contadorPorCiclo = {};
 let ciclosDetectados = new Set();
@@ -184,7 +186,7 @@ Object.keys(cursos).forEach(id=>{
 });
 
 // ===============================
-// AGREGAR TÍTULOS DE CICLO
+// TÍTULOS DE CICLO
 // ===============================
 
 ciclosDetectados.forEach(ciclo=>{
@@ -195,7 +197,7 @@ ciclosDetectados.forEach(ciclo=>{
 
   elements.push({
     data:{ id:"titulo_"+ciclo, label:"CICLO " + ciclo },
-    position:{ x:posX, y:80 },
+    position:{ x:posX, y:100 },
     selectable:false,
     grabbable:false
   });
@@ -209,17 +211,17 @@ ciclosDetectados.forEach(ciclo=>{
 const cy = cytoscape({
   container: document.getElementById('cy'),
 
-  autoungrabify: true,
+  autoungrabify: true,   // no mover nodos
   autolock: true,
 
   zoomingEnabled: true,
   userZoomingEnabled: true,
 
   panningEnabled: true,
-  userPanningEnabled: false,
+  userPanningEnabled: true,   // ← puedes mover el fondo
 
-  minZoom: 0.8,
-  maxZoom: 2.5,
+  minZoom: 0.6,
+  maxZoom: 3,
 
   layout:{ name:"preset" },
 
@@ -232,7 +234,7 @@ const cy = cytoscape({
         'color':'#94a3b8',
         'text-valign':'center',
         'text-halign':'center',
-        'width':140,
+        'width':150,
         'height':55,
         'font-size':10,
         'border-width':2,
@@ -245,9 +247,9 @@ const cy = cytoscape({
       style:{
         'background-color':'transparent',
         'border-width':0,
-        'font-size':16,
+        'font-size':18,
         'color':'#00ffaa',
-        'width':150,
+        'width':160,
         'height':30
       }
     },
@@ -266,10 +268,9 @@ const cy = cytoscape({
   elements:elements
 });
 
-// Centrar automáticamente
+// Centrado inicial SIN bloquear movimiento después
 cy.ready(function(){
-  cy.fit(undefined, 120);
-  cy.zoom(1.05);
+  cy.fit(undefined, 150);
   cy.center();
 });
 
@@ -280,7 +281,6 @@ cy.ready(function(){
 cy.on('tap','node', function(evt){
 
   const id = evt.target.id();
-
   if(id.startsWith("titulo_")) return;
 
   if(aprobados.has(id)){
@@ -298,69 +298,40 @@ cy.on('tap','node', function(evt){
 
 function actualizar(){
 
-  let total = Object.keys(cursos).length;
+  let totalCursos = Object.keys(cursos).length;
   let completados = aprobados.size;
-  let porcentaje = total===0?0:Math.round((completados/total)*100);
 
-  document.getElementById("progress-bar").style.width = porcentaje+"%";
+  let porcentaje = totalCursos===0 ? 0 :
+    (completados / totalCursos);
+
+  document.getElementById("progress-bar").style.width =
+    Math.round(porcentaje*100) + "%";
+
   document.getElementById("progress-text").innerText =
-    porcentaje+"% completado ("+completados+"/"+total+")";
+    Math.round(porcentaje*100) + "% completado (" +
+    completados + "/" + totalCursos + ")";
 
-  let ciclos = {};
+  // ===============================
+  // CÁLCULO REAL DE AÑOS
+  // ===============================
 
-  Object.keys(cursos).forEach(id=>{
-    const c = cursos[id].ciclo;
-    if(c === 0) return;
+  const ciclosTotales = 10;  // ajusta si tu carrera tiene más
+  const añosTotales = ciclosTotales / 2;
 
-    if(!ciclos[c]) ciclos[c] = [];
-    ciclos[c].push(id);
-  });
-
-  let cicloCompletoMax = 0;
-
-  const ciclosOrdenados = Object.keys(ciclos)
-    .map(Number)
-    .sort((a,b)=>a-b);
-
-  for(let ciclo of ciclosOrdenados){
-
-    const cursosDelCiclo = ciclos[ciclo];
-
-    const todosAprobados = cursosDelCiclo.every(id =>
-      aprobados.has(id)
-    );
-
-    if(todosAprobados){
-      cicloCompletoMax = ciclo;
-    } else {
-      break;
-    }
-  }
-
-  let añoActual = cicloCompletoMax === 0
-    ? 1
-    : Math.ceil(cicloCompletoMax / 2);
-
-  let añosTotales = 5;
-  let añosRestantes = añosTotales - añoActual;
+  let ciclosEquivalentes = porcentaje * ciclosTotales;
+  let añosAvanzados = ciclosEquivalentes / 2;
+  let añosRestantes = añosTotales - añosAvanzados;
 
   if(añosRestantes < 0) añosRestantes = 0;
 
-  let mensaje;
+  document.getElementById("time-remaining").innerText =
+    "Te faltan aproximadamente " +
+    añosRestantes.toFixed(1) +
+    " año(s) para terminar.";
 
-  if(cicloCompletoMax === 0){
-    mensaje = "Aún no has cerrado ningún ciclo completo.";
-  }
-  else if(cicloCompletoMax === 10){
-    mensaje = "Has completado todos los ciclos 🎓";
-  }
-  else{
-    mensaje =
-      `Has cerrado hasta ciclo ${cicloCompletoMax}. ` +
-      `Vas en ${añoActual}° año — te quedan ${añosRestantes} año(s) aprox.`;
-  }
-
-  document.getElementById("time-remaining").innerText = mensaje;
+  // ===============================
+  // COLORES
+  // ===============================
 
   cy.nodes().forEach(n=>{
 
