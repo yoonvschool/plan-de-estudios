@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Malla Interactiva</title>
+
+<script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    background: #0f0f0f;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+#cy {
+    width: 100%;
+    height: 100vh;
+    display: block;
+}
+</style>
+</head>
+
+<body>
+<div id="cy"></div>
+
+<script>
+
+const cursos = {
+"CBO104 Cálculo I": [],
+"CBO105 Matemática Básica": [],
+"CBO106 Biología": [],
+"CBO101 Lenguaje": [],
+"CBO102 Métodos de Estudio Universitario": [],
+"CBO103 Gestión Personal": [],
+"CBO206 Física I": [],
+
+"CBO204 Cálculo II": ["CBO104 Cálculo I"],
+"183031 Cálculo III": ["CBO204 Cálculo II"],
+"183041 Cálculo IV": ["183031 Cálculo III"],
+"183051 Análisis Real": ["183031 Cálculo III"],
+"183061 Análisis Funcional I": ["183051 Análisis Real"],
+"183071 Análisis Funcional II": ["183061 Análisis Funcional I"],
+"183091 Optimización": ["183051 Análisis Real"],
+"183052 Ecuaciones Diferenciales Ordinarias": ["CBO204 Cálculo II", "183032 Elementos de Álgebra y Geometría"],
+"183081 Ecuaciones Diferenciales Parciales I": ["183052 Ecuaciones Diferenciales Ordinarias"],
+
+"183032 Elementos de Álgebra y Geometría": ["CBO105 Matemática Básica"],
+"183033 Algorítmica": ["CBO105 Matemática Básica"],
+"183034 Matemática Discreta": ["CBO105 Matemática Básica"],
+"183042 Álgebra": ["183032 Elementos de Álgebra y Geometría"],
+"183062 Probabilidad e Inferencia": ["183032 Elementos de Álgebra y Geometría"],
+"183044 Estructura de Datos": ["183033 Algorítmica"],
+"183053 Base de Datos e Ingeniería de Software": ["183044 Estructura de Datos"],
+"183064 Sistemas Operativos": ["183053 Base de Datos e Ingeniería de Software"],
+"183074 Inteligencia Artificial": ["183064 Sistemas Operativos"],
+"183083 Redes": ["183064 Sistemas Operativos"],
+
+"183043 Modelos Matemáticos de la Física": ["CBO105 Matemática Básica", "CBO204 Cálculo II", "CBO206 Física I"],
+"183065 Técnicas de Modelamiento": ["183043 Modelos Matemáticos de la Física"],
+"183073 Modelos Matemáticos de la Ciencia I": ["183065 Técnicas de Modelamiento", "183052 Ecuaciones Diferenciales Ordinarias"],
+"183082 Modelos de la Ciencia II": ["183073 Modelos Matemáticos de la Ciencia I"],
+"183092 Modelos de la Ciencia III": ["183082 Modelos de la Ciencia II"],
+"183101 Modelos de la Ciencia IV": ["183092 Modelos de la Ciencia III"],
+
+"183084 Proyecto de Investigación": [],
+"183094 Desarrollo del Proyecto de Investigación": [],
+"183104 Presentación y Sustentación": ["183094 Desarrollo del Proyecto de Investigación"],
+"183103 Práctica Pre Profesional": [],
+"183102 Gestión de Proyectos": ["183083 Redes"],
+
+"183111 EDP II": ["183081 Ecuaciones Diferenciales Parciales I", "183071 Análisis Funcional II"],
+"183112 Análisis Complejo": ["183051 Análisis Real"],
+"183131 Sistemas Inteligentes": ["183074 Inteligencia Artificial"]
+};
+
+let elements = [];
+let aprobados = new Set();
+
+Object.keys(cursos).forEach(curso => {
+    elements.push({ data: { id: curso, label: curso } });
+});
+
+Object.entries(cursos).forEach(([curso, prereqs]) => {
+    prereqs.forEach(pr => {
+        elements.push({
+            data: {
+                source: pr,
+                target: curso
+            }
+        });
+    });
+});
+
+let cy = cytoscape({
+    container: document.getElementById('cy'),
+
+    elements: elements,
+
+    style: [
+        {
+            selector: 'node',
+            style: {
+                'background-color': '#555',
+                'label': 'data(label)',
+                'color': '#fff',
+                'text-wrap': 'wrap',
+                'text-max-width': '150px',
+                'font-size': '10px'
+            }
+        },
+        {
+            selector: 'edge',
+            style: {
+                'width': 2,
+                'line-color': '#888',
+                'target-arrow-color': '#888',
+                'target-arrow-shape': 'triangle',
+                'curve-style': 'bezier'
+            }
+        },
+        {
+            selector: '.aprobado',
+            style: {
+                'background-color': '#00ff88'
+            }
+        },
+        {
+            selector: '.disponible',
+            style: {
+                'background-color': '#ff3b3b'
+            }
+        }
+    ],
+
+    layout: {
+        name: 'breadthfirst',
+        directed: true,
+        padding: 10
+    }
+});
+
+function puedeLlevar(curso) {
+    return cursos[curso].every(pr => aprobados.has(pr));
+}
+
+function actualizarEstados() {
+    cy.nodes().forEach(node => {
+        node.removeClass('aprobado');
+        node.removeClass('disponible');
+
+        const nombre = node.id();
+
+        if (aprobados.has(nombre)) {
+            node.addClass('aprobado');
+        } else if (puedeLlevar(nombre)) {
+            node.addClass('disponible');
+        }
+    });
+}
+
+cy.on('tap', 'node', function(evt) {
+    const nombre = evt.target.id();
+
+    if (puedeLlevar(nombre)) {
+        if (aprobados.has(nombre)) {
+            aprobados.delete(nombre);
+        } else {
+            aprobados.add(nombre);
+        }
+        actualizarEstados();
+    }
+});
+
+actualizarEstados();
+
+</script>
+</body>
+</html>
