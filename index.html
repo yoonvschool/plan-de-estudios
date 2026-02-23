@@ -44,7 +44,7 @@ h1{
 }
 
 #progress-text{
-  font-size:13px;
+  font-size:14px;
   color:#94a3b8;
   margin-bottom:5px;
 }
@@ -57,7 +57,7 @@ h1{
 }
 
 #cy{
-  width:3500px;
+  width:4200px;
   height:100%;
 }
 </style>
@@ -66,6 +66,7 @@ h1{
 
 <header>
   <h1>Malla Curricular</h1>
+
   <div id="progress-wrapper">
     <div id="progress-bar"></div>
   </div>
@@ -78,13 +79,13 @@ h1{
 
 <script>
 
-// ==========================
+// =============================
 // PEGA AQUÍ TU LISTA COMPLETA
-// ==========================
+// =============================
 
 const cursos = {
 
-  // CICLO 0
+ // CICLO 0
 "183111": {nombre:"EDP II", ciclo:0, prereq:["183081","183071"]},
 "183112": {nombre:"Análisis Complejo Aplicado", ciclo:0, prereq:["183051"]},
 "183113": {nombre:"Ecuaciones Integrales", ciclo:0, prereq:["183081"]},
@@ -163,16 +164,17 @@ const cursos = {
 
 };
 
-// ==========================
-// POSICIÓN FIJA POR CICLO
-// ==========================
+// =============================
+// CONFIGURACIÓN DE POSICIÓN
+// =============================
 
 function cicloPos(c){
   return c === 0 ? 11 : c;
 }
 
-const spacingX = 260;
-const spacingY = 120;
+const spacingX = 320;
+const spacingY = 150;
+
 let contador = {};
 let elementos = [];
 
@@ -186,66 +188,54 @@ Object.keys(cursos).forEach(id=>{
     data:{ id:id, label:curso.nombre },
     position:{
       x: col * spacingX,
-      y: 120 + contador[col]*spacingY
+      y: 150 + contador[col]*spacingY
     }
   });
 
   contador[col]++;
-
-  curso.prereq.forEach(p=>{
-    elementos.push({
-      data:{ id:p+"-"+id, source:p, target:id }
-    });
-  });
 });
 
-// ==========================
-// CYTOSCAPE
-// ==========================
+// =============================
+// INICIALIZAR CYTOSCAPE
+// =============================
 
 const cy = cytoscape({
   container: document.getElementById('cy'),
   elements: elementos,
   layout:{ name:'preset' },
+  minZoom:0.7,
+  maxZoom:2.2,
+  wheelSensitivity:0.15,
   style:[
     {
       selector:'node',
       style:{
         'label':'data(label)',
         'text-wrap':'wrap',
-        'text-max-width':160,
+        'text-max-width':200,
         'text-valign':'center',
         'text-halign':'center',
-        'font-size':11,
+        'font-size':15,
         'background-color':'#1e293b',
         'border-color':'#334155',
         'border-width':1,
-        'color':'#64748b',
+        'color':'#cbd5e1',
         'shape':'roundrectangle',
-        'width':200,
-        'height':70
-      }
-    },
-    {
-      selector:'edge',
-      style:{
-        'curve-style':'bezier',
-        'target-arrow-shape':'triangle',
-        'line-color':'#334155',
-        'target-arrow-color':'#334155',
-        'width':1,
-        'opacity':0   // ocultas por defecto
+        'width':260,
+        'height':95
       }
     }
-  ],
-  userZoomingEnabled:true,
-  userPanningEnabled:true,
-  wheelSensitivity:0.2
+  ]
 });
 
-// ==========================
+// Ajuste automático inicial
+cy.ready(()=>{
+  cy.fit(cy.nodes(), 100);
+});
+
+// =============================
 // TÍTULOS DE CICLO
-// ==========================
+// =============================
 
 for(let i=1;i<=11;i++){
   const nombre = (i===11) ? "Ciclo 0" : "Ciclo "+i;
@@ -253,22 +243,22 @@ for(let i=1;i<=11;i++){
   cy.add({
     group:'nodes',
     data:{ id:'titulo'+i, label:nombre },
-    position:{ x:i*spacingX, y:40 },
+    position:{ x:i*spacingX, y:60 },
     selectable:false,
     grabbable:false,
     style:{
       'background-opacity':0,
       'border-width':0,
       'color':'#00aaff',
-      'font-size':18,
+      'font-size':20,
       'font-weight':'600'
     }
   });
 }
 
-// ==========================
+// =============================
 // LÓGICA ACADÉMICA
-// ==========================
+// =============================
 
 let aprobados = new Set();
 
@@ -307,21 +297,19 @@ function actualizar(){
       n.style({
         'background-color':'#1e293b',
         'border-color':'#334155',
-        'color':'#64748b'
+        'color':'#94a3b8'
       });
     }
 
   });
 
-  cy.edges().style('opacity',0);
 }
 
 cy.on('tap','node',evt=>{
-
   const id = evt.target.id();
+
   if(id.startsWith("titulo")) return;
 
-  // alternar aprobado
   if(aprobados.has(id)){
     aprobados.delete(id);
   } else {
@@ -329,19 +317,6 @@ cy.on('tap','node',evt=>{
   }
 
   actualizar();
-
-  // iluminar SOLO relaciones del nodo clickeado
-  cy.edges().forEach(e=>{
-    if(e.source().id()===id || e.target().id()===id){
-      e.style({
-        'opacity':1,
-        'line-color':'#00aaff',
-        'target-arrow-color':'#00aaff',
-        'width':2
-      });
-    }
-  });
-
 });
 
 actualizar();
