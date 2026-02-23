@@ -49,17 +49,15 @@ h1{
   margin-bottom:5px;
 }
 
-/* CONTENEDOR CON SCROLL REAL */
 #graph-container{
   width:100%;
   height:80vh;
   overflow-x:auto;
   overflow-y:hidden;
-  background:#0f172a;
 }
 
 #cy{
-  width:3200px; /* espacio amplio para ciclos */
+  width:3500px;
   height:100%;
 }
 </style>
@@ -80,13 +78,13 @@ h1{
 
 <script>
 
-// =============================
+// ==========================
 // PEGA AQUÍ TU LISTA COMPLETA
-// =============================
+// ==========================
 
 const cursos = {
 
-// CICLO 0
+  // CICLO 0
 "183111": {nombre:"EDP II", ciclo:0, prereq:["183081","183071"]},
 "183112": {nombre:"Análisis Complejo Aplicado", ciclo:0, prereq:["183051"]},
 "183113": {nombre:"Ecuaciones Integrales", ciclo:0, prereq:["183081"]},
@@ -165,11 +163,9 @@ const cursos = {
 
 };
 
-
-
-// =============================
-// POSICIÓN DE CICLOS
-// =============================
+// ==========================
+// POSICIÓN FIJA POR CICLO
+// ==========================
 
 function cicloPos(c){
   return c === 0 ? 11 : c;
@@ -203,21 +199,21 @@ Object.keys(cursos).forEach(id=>{
   });
 });
 
-
-// =============================
-// INICIALIZAR CYTOSCAPE
-// =============================
+// ==========================
+// CYTOSCAPE
+// ==========================
 
 const cy = cytoscape({
   container: document.getElementById('cy'),
   elements: elementos,
+  layout:{ name:'preset' },
   style:[
     {
       selector:'node',
       style:{
         'label':'data(label)',
         'text-wrap':'wrap',
-        'text-max-width':170,
+        'text-max-width':160,
         'text-valign':'center',
         'text-halign':'center',
         'font-size':11,
@@ -237,19 +233,19 @@ const cy = cytoscape({
         'target-arrow-shape':'triangle',
         'line-color':'#334155',
         'target-arrow-color':'#334155',
-        'width':1.5
+        'width':1,
+        'opacity':0   // ocultas por defecto
       }
     }
   ],
   userZoomingEnabled:true,
   userPanningEnabled:true,
-  wheelSensitivity:0.15
+  wheelSensitivity:0.2
 });
 
-
-// =============================
-// TITULOS DE CICLO
-// =============================
+// ==========================
+// TÍTULOS DE CICLO
+// ==========================
 
 for(let i=1;i<=11;i++){
   const nombre = (i===11) ? "Ciclo 0" : "Ciclo "+i;
@@ -270,10 +266,9 @@ for(let i=1;i<=11;i++){
   });
 }
 
-
-// =============================
+// ==========================
 // LÓGICA ACADÉMICA
-// =============================
+// ==========================
 
 let aprobados = new Set();
 
@@ -318,12 +313,15 @@ function actualizar(){
 
   });
 
+  cy.edges().style('opacity',0);
 }
 
 cy.on('tap','node',evt=>{
+
   const id = evt.target.id();
   if(id.startsWith("titulo")) return;
 
+  // alternar aprobado
   if(aprobados.has(id)){
     aprobados.delete(id);
   } else {
@@ -331,6 +329,19 @@ cy.on('tap','node',evt=>{
   }
 
   actualizar();
+
+  // iluminar SOLO relaciones del nodo clickeado
+  cy.edges().forEach(e=>{
+    if(e.source().id()===id || e.target().id()===id){
+      e.style({
+        'opacity':1,
+        'line-color':'#00aaff',
+        'target-arrow-color':'#00aaff',
+        'width':2
+      });
+    }
+  });
+
 });
 
 actualizar();
