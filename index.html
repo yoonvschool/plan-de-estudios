@@ -2,210 +2,234 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Malla Académica - Majo</title>
+<title>Malla Interactiva - Computación Científica</title>
+<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 
 <style>
-body{
-    margin:0;
-    font-family:Arial, sans-serif;
-    background:#111;
-    color:white;
+body {
+  margin: 0;
+  background: #080812;
+  font-family: Arial, sans-serif;
 }
 
-#topbar{
-    padding:15px;
-    background:#1a1a1a;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    position:sticky;
-    top:0;
-    z-index:10;
+#cy {
+  width: 100vw;
+  height: 100vh;
 }
 
-#contenedor{
-    display:flex;
-    overflow-x:auto;
-    padding:20px;
-    gap:20px;
+.panel {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.85);
+  padding: 15px;
+  border-radius: 12px;
+  color: white;
+  font-size: 14px;
 }
 
-.ciclo{
-    min-width:250px;
+button {
+  margin-top: 8px;
+  background: #111;
+  border: 1px solid #555;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.ciclo h2{
-    text-align:center;
-    margin-bottom:10px;
-}
-
-.curso{
-    background:#444;
-    padding:10px;
-    margin-bottom:10px;
-    border-radius:6px;
-    cursor:pointer;
-    font-size:13px;
-    transition:0.2s;
-}
-
-.curso:hover{
-    transform:scale(1.03);
-}
-
-.aprobado{
-    background:#00c853 !important;
-}
-
-.disponible{
-    background:#d50000 !important;
-}
-
-button{
-    background:#d50000;
-    border:none;
-    padding:6px 12px;
-    color:white;
-    border-radius:4px;
-    cursor:pointer;
-}
-
-button:hover{
-    opacity:0.8;
+button:hover {
+  background: #222;
 }
 </style>
 </head>
 <body>
 
-<div id="topbar">
-    <div id="progreso">Progreso: 0%</div>
-    <button onclick="resetear()">Resetear</button>
-</div>
+<div id="cy"></div>
 
-<div id="contenedor"></div>
+<div class="panel">
+<b>Estados</b><br>
+<span style="color:#00ff88;">■ Aprobado</span><br>
+<span style="color:#00aaff;">■ Disponible</span><br>
+<span style="color:#555;">■ Bloqueado</span><br>
+<button onclick="resetear()">Resetear</button>
+</div>
 
 <script>
 
-// =====================
+// =============================
 // CURSOS COMPLETOS
-// =====================
+// =============================
 
 const cursos = {
 
-"CBO104 Cálculo I": { ciclo:1, prereq:[] },
-"CBO105 Matemática Básica": { ciclo:1, prereq:[] },
-"CBO106 Biología": { ciclo:1, prereq:[] },
-"CBO101 Lenguaje": { ciclo:1, prereq:[] },
-"CBO102 Métodos Estudio": { ciclo:1, prereq:[] },
-"CBO103 Gestión Personal": { ciclo:1, prereq:[] },
+// CICLO 1
+"CBE003": {nombre:"Economía General", ciclo:1, prereq:[]},
+"CBE004": {nombre:"Género y Sociedad", ciclo:1, prereq:[]},
+"CBO101": {nombre:"Lenguaje", ciclo:1, prereq:[]},
+"CBO102": {nombre:"Métodos de Estudio Universitario", ciclo:1, prereq:[]},
+"CBO103": {nombre:"Gestión Personal", ciclo:1, prereq:[]},
+"CBO104": {nombre:"Cálculo I", ciclo:1, prereq:[]},
+"CBO105": {nombre:"Matemática Básica", ciclo:1, prereq:[]},
+"CBO106": {nombre:"Biología", ciclo:1, prereq:[]},
 
-"CBO206 Física I": { ciclo:2, prereq:[] },
-"CBO204 Cálculo II": { ciclo:2, prereq:["CBO104 Cálculo I"] },
-"183032 Elementos Álgebra": { ciclo:2, prereq:["CBO105 Matemática Básica"] },
-"183033 Algorítmica": { ciclo:2, prereq:["CBO105 Matemática Básica"] },
-"183034 Matemática Discreta": { ciclo:2, prereq:["CBO105 Matemática Básica"] },
+// CICLO 2
+"CBO201": {nombre:"Fundamentos de Investigación Científica", ciclo:2, prereq:[]},
+"CBO202": {nombre:"Medio Ambiente y Desarrollo Sostenible", ciclo:2, prereq:["CBO106"]},
+"CBO203": {nombre:"Realidad Nacional y Mundial", ciclo:2, prereq:[]},
+"CBO204": {nombre:"Cálculo II", ciclo:2, prereq:["CBO104"]},
+"CBO205": {nombre:"Química Inorgánica y Orgánica", ciclo:2, prereq:[]},
+"CBO206": {nombre:"Física General", ciclo:2, prereq:[]},
 
-"183031 Cálculo III": { ciclo:3, prereq:["CBO204 Cálculo II"] },
-"183044 Estructura de Datos": { ciclo:3, prereq:["183033 Algorítmica"] },
+// CICLO 3
+"183031": {nombre:"Cálculo III", ciclo:3, prereq:["CBO204"]},
+"183032": {nombre:"Elementos de Álgebra y Geometría", ciclo:3, prereq:["CBO105","CBO104"]},
+"183033": {nombre:"Algorítmica y Fundamentos de Programación", ciclo:3, prereq:["CBO105"]},
+"183034": {nombre:"Matemática Discreta y Computacional", ciclo:3, prereq:["CBO105","CBO104"]},
+"183035": {nombre:"Inglés I", ciclo:3, prereq:[]},
 
-"183041 Cálculo IV": { ciclo:4, prereq:["183031 Cálculo III"] },
-"183051 Análisis Real": { ciclo:4, prereq:["183031 Cálculo III"] },
-"183042 Álgebra": { ciclo:4, prereq:["183032 Elementos Álgebra"] },
-"183062 Probabilidad": { ciclo:4, prereq:["183032 Elementos Álgebra"] },
+// CICLO 4
+"183041": {nombre:"Cálculo IV", ciclo:4, prereq:["183031"]},
+"183042": {nombre:"Álgebra", ciclo:4, prereq:["183032"]},
+"183043": {nombre:"Modelos Matemáticos de la Física", ciclo:4, prereq:["CBO204","CBO105","CBO206"]},
+"183044": {nombre:"Estructura de Datos", ciclo:4, prereq:["183033"]},
+"183045": {nombre:"Inglés II", ciclo:4, prereq:["183035"]},
 
-"183061 Análisis Funcional I": { ciclo:5, prereq:["183051 Análisis Real"] },
-"183052 EDO": { ciclo:5, prereq:["CBO204 Cálculo II","183032 Elementos Álgebra"] },
-"183053 Base de Datos": { ciclo:5, prereq:["183044 Estructura de Datos"] },
+// CICLO 5
+"183051": {nombre:"Análisis Real", ciclo:5, prereq:["183031"]},
+"1803052": {nombre:"Ecuaciones Diferenciales Ordinarias", ciclo:5, prereq:["CBO204","183032"]},
+"183053": {nombre:"Base de Datos e Ingeniería de Software", ciclo:5, prereq:["183044"]},
+"183054": {nombre:"Métodos Numéricos y Programación I", ciclo:5, prereq:["CBO204","183042"]},
+"183055": {nombre:"Inglés III", ciclo:5, prereq:["183045"]},
 
-"183071 Análisis Funcional II": { ciclo:6, prereq:["183061 Análisis Funcional I"] },
-"183081 EDP I": { ciclo:6, prereq:["183052 EDO"] },
-"183064 Sistemas Operativos": { ciclo:6, prereq:["183053 Base de Datos"] },
+// CICLO 6
+"183061": {nombre:"Análisis Funcional I", ciclo:6, prereq:["183051","183042"]},
+"183062": {nombre:"Probabilidad e Inferencia Estadística", ciclo:6, prereq:["CBO204","183032"]},
+"183063": {nombre:"Métodos Numéricos y Programación II", ciclo:6, prereq:["183054","1803052"]},
+"183064": {nombre:"Sistemas Operativos", ciclo:6, prereq:["183053"]},
+"183065": {nombre:"Técnicas de Modelamiento", ciclo:6, prereq:["183043"]},
 
-"183074 Inteligencia Artificial": { ciclo:7, prereq:["183064 Sistemas Operativos"] },
-"183083 Redes": { ciclo:7, prereq:["183064 Sistemas Operativos"] },
-"183065 Técnicas Modelamiento": { ciclo:7, prereq:["183043 Modelos Física"] },
+// CICLO 7
+"183071": {nombre:"Análisis Funcional II", ciclo:7, prereq:["183061","1803052"]},
+"183072": {nombre:"Computación Gráfica", ciclo:7, prereq:["183042"]},
+"183073": {nombre:"Modelos Matemáticos de la Ciencia I", ciclo:7, prereq:["1803052","183065"]},
+"183074": {nombre:"Inteligencia Artificial", ciclo:7, prereq:["183064"]},
 
-"183111 EDP II": { ciclo:8, prereq:["183081 EDP I","183071 Análisis Funcional II"] }
+// CICLO 8
+"183081": {nombre:"Ecuaciones Diferenciales Parciales I", ciclo:8, prereq:["1803052"]},
+"183082": {nombre:"Modelos Matemáticos de la Ciencia II", ciclo:8, prereq:["183073"]},
+"183083": {nombre:"Redes, Arquitectura y Comunicaciones", ciclo:8, prereq:["183064"]},
+"183084": {nombre:"Proyecto de Investigación", ciclo:8, prereq:[]},
+
+// CICLO 9
+"183091": {nombre:"Optimización", ciclo:9, prereq:["183051","183042"]},
+"183092": {nombre:"Modelos Matemáticos de la Ciencia III", ciclo:9, prereq:["183082"]},
+"183093": {nombre:"Métodos Numéricos y Programación III", ciclo:9, prereq:["183063","183081"]},
+"183094": {nombre:"Desarrollo del Proyecto de Investigación", ciclo:9, prereq:[]},
+
+// CICLO 10
+"183101": {nombre:"Modelos Matemáticos de la Ciencia IV", ciclo:10, prereq:["183092"]},
+"183102": {nombre:"Formulación, Evaluación y Gestión de Proyectos", ciclo:10, prereq:["183083"]},
+"183103": {nombre:"Práctica Pre Profesional", ciclo:10, prereq:[]},
+"183104": {nombre:"Presentación y Sustentación del Proyecto", ciclo:10, prereq:["183094"]},
+
+// CICLO 0
+"183111": {nombre:"Ecuaciones Diferenciales Parciales II", ciclo:0, prereq:["183081","183071"]},
+"183112": {nombre:"Análisis Complejo y Aplicado", ciclo:0, prereq:["183051"]},
+"183113": {nombre:"Ecuaciones Integrales", ciclo:0, prereq:["183081"]},
+"183114": {nombre:"Análisis Complejo en CN", ciclo:0, prereq:["183112"]},
+"183115": {nombre:"Problemas Inversos", ciclo:0, prereq:["1803052"]}
 
 };
 
-// =====================
-// ESTADO
-// =====================
+// =============================
+// GRAFO
+// =============================
 
-let aprobados = new Set(JSON.parse(localStorage.getItem("aprobados")) || []);
+let aprobados = new Set(JSON.parse(localStorage.getItem("aprobados") || "[]"));
+const elements = [];
+const spacingX = 260;
+const spacingY = 100;
+const contador = {};
 
-// =====================
-// RENDER
-// =====================
+Object.entries(cursos).forEach(([id,data]) => {
+  if(!contador[data.ciclo]) contador[data.ciclo] = 0;
 
-function puedeLlevar(nombre){
-    return cursos[nombre].prereq.every(pr => aprobados.has(pr));
+  elements.push({
+    data:{id:id,label:data.nombre},
+    position:{
+      x:(data.ciclo+1)*spacingX,
+      y:contador[data.ciclo]*spacingY+50
+    }
+  });
+
+  contador[data.ciclo]++;
+
+  data.prereq.forEach(p=>{
+    elements.push({data:{source:p,target:id}});
+  });
+});
+
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  elements: elements,
+  layout:{name:'preset'},
+  style:[
+    {selector:'node',style:{
+      'background-color':'#444',
+      'label':'data(label)',
+      'color':'white',
+      'text-wrap':'wrap',
+      'text-max-width':150,
+      'width':170,
+      'height':55,
+      'shape':'roundrectangle',
+      'font-size':9
+    }},
+    {selector:'edge',style:{
+      'width':2,
+      'line-color':'#555',
+      'target-arrow-color':'#555',
+      'target-arrow-shape':'triangle'
+    }}
+  ]
+});
+
+function actualizar(){
+  cy.nodes().forEach(n=>{
+    const id=n.id();
+    const req=cursos[id].prereq;
+
+    if(aprobados.has(id)){
+      n.style('background-color','#00ff88');
+      n.style('box-shadow','0 0 25px #00ff88');
+    }
+    else if(req.every(r=>aprobados.has(r))){
+      n.style('background-color','#00aaff');
+      n.style('box-shadow','0 0 25px #00aaff');
+    }
+    else{
+      n.style('background-color','#444');
+      n.style('box-shadow','none');
+    }
+  });
+  localStorage.setItem("aprobados",JSON.stringify([...aprobados]));
 }
 
-function render(){
-
-    const contenedor = document.getElementById("contenedor");
-    contenedor.innerHTML="";
-
-    let ciclos = {};
-
-    Object.entries(cursos).forEach(([nombre,data])=>{
-        if(!ciclos[data.ciclo]) ciclos[data.ciclo]=[];
-        ciclos[data.ciclo].push(nombre);
-    });
-
-    Object.keys(ciclos).sort((a,b)=>a-b).forEach(ciclo=>{
-        let col = document.createElement("div");
-        col.className="ciclo";
-        col.innerHTML=`<h2>Ciclo ${ciclo}</h2>`;
-
-        ciclos[ciclo].forEach(nombre=>{
-            let div = document.createElement("div");
-            div.className="curso";
-            div.innerText=nombre;
-
-            if(aprobados.has(nombre)){
-                div.classList.add("aprobado");
-            }else if(puedeLlevar(nombre)){
-                div.classList.add("disponible");
-            }
-
-            div.onclick=()=>{
-                if(puedeLlevar(nombre)){
-                    if(aprobados.has(nombre)) aprobados.delete(nombre);
-                    else aprobados.add(nombre);
-
-                    localStorage.setItem("aprobados",JSON.stringify([...aprobados]));
-                    render();
-                }
-            };
-
-            col.appendChild(div);
-        });
-
-        contenedor.appendChild(col);
-    });
-
-    actualizarProgreso();
-}
-
-function actualizarProgreso(){
-    let total=Object.keys(cursos).length;
-    let porcentaje=Math.round((aprobados.size/total)*100);
-    document.getElementById("progreso").innerText=
-        `Progreso: ${porcentaje}% (${aprobados.size}/${total})`;
-}
+cy.on('tap','node',evt=>{
+  const id=evt.target.id();
+  if(aprobados.has(id)) aprobados.delete(id);
+  else aprobados.add(id);
+  actualizar();
+});
 
 function resetear(){
-    aprobados.clear();
-    localStorage.removeItem("aprobados");
-    render();
+  aprobados.clear();
+  actualizar();
 }
 
-render();
+actualizar();
 
 </script>
-
 </body>
 </html>
