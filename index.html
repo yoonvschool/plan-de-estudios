@@ -2,64 +2,93 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Malla Estratégica - Majo</title>
-<script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
+<title>Malla Académica - Majo</title>
 
 <style>
-body {
-    margin: 0;
-    background: #0f0f0f;
-    font-family: Arial, sans-serif;
-    color: white;
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#111;
+    color:white;
 }
 
-#topbar {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background: #1a1a1a;
-    padding: 10px;
-    z-index: 10;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+#topbar{
+    padding:15px;
+    background:#1a1a1a;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    position:sticky;
+    top:0;
+    z-index:10;
 }
 
-#cy {
-    width: 100%;
-    height: 100vh;
-    margin-top: 50px;
+#contenedor{
+    display:flex;
+    overflow-x:auto;
+    padding:20px;
+    gap:20px;
 }
 
-button {
-    background: #ff2d2d;
-    border: none;
-    padding: 6px 12px;
-    color: white;
-    cursor: pointer;
-    border-radius: 4px;
+.ciclo{
+    min-width:250px;
 }
 
-button:hover {
-    opacity: 0.8;
+.ciclo h2{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.curso{
+    background:#444;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    transition:0.2s;
+}
+
+.curso:hover{
+    transform:scale(1.03);
+}
+
+.aprobado{
+    background:#00c853 !important;
+}
+
+.disponible{
+    background:#d50000 !important;
+}
+
+button{
+    background:#d50000;
+    border:none;
+    padding:6px 12px;
+    color:white;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:0.8;
 }
 </style>
 </head>
-
 <body>
 
 <div id="topbar">
     <div id="progreso">Progreso: 0%</div>
-    <button onclick="resetear()">Resetear carrera</button>
+    <button onclick="resetear()">Resetear</button>
 </div>
 
-<div id="cy"></div>
+<div id="contenedor"></div>
 
 <script>
 
-// ========================
-// CURSOS CON CICLOS
-// ========================
+// =====================
+// CURSOS COMPLETOS
+// =====================
 
 const cursos = {
 
@@ -67,155 +96,116 @@ const cursos = {
 "CBO105 Matemática Básica": { ciclo:1, prereq:[] },
 "CBO106 Biología": { ciclo:1, prereq:[] },
 "CBO101 Lenguaje": { ciclo:1, prereq:[] },
-"CBO102 Métodos de Estudio Universitario": { ciclo:1, prereq:[] },
+"CBO102 Métodos Estudio": { ciclo:1, prereq:[] },
 "CBO103 Gestión Personal": { ciclo:1, prereq:[] },
 
 "CBO206 Física I": { ciclo:2, prereq:[] },
 "CBO204 Cálculo II": { ciclo:2, prereq:["CBO104 Cálculo I"] },
 "183032 Elementos Álgebra": { ciclo:2, prereq:["CBO105 Matemática Básica"] },
 "183033 Algorítmica": { ciclo:2, prereq:["CBO105 Matemática Básica"] },
+"183034 Matemática Discreta": { ciclo:2, prereq:["CBO105 Matemática Básica"] },
 
 "183031 Cálculo III": { ciclo:3, prereq:["CBO204 Cálculo II"] },
 "183044 Estructura de Datos": { ciclo:3, prereq:["183033 Algorítmica"] },
 
 "183041 Cálculo IV": { ciclo:4, prereq:["183031 Cálculo III"] },
 "183051 Análisis Real": { ciclo:4, prereq:["183031 Cálculo III"] },
+"183042 Álgebra": { ciclo:4, prereq:["183032 Elementos Álgebra"] },
+"183062 Probabilidad": { ciclo:4, prereq:["183032 Elementos Álgebra"] },
 
 "183061 Análisis Funcional I": { ciclo:5, prereq:["183051 Análisis Real"] },
 "183052 EDO": { ciclo:5, prereq:["CBO204 Cálculo II","183032 Elementos Álgebra"] },
+"183053 Base de Datos": { ciclo:5, prereq:["183044 Estructura de Datos"] },
 
 "183071 Análisis Funcional II": { ciclo:6, prereq:["183061 Análisis Funcional I"] },
 "183081 EDP I": { ciclo:6, prereq:["183052 EDO"] },
+"183064 Sistemas Operativos": { ciclo:6, prereq:["183053 Base de Datos"] },
 
-"183111 EDP II": { ciclo:7, prereq:["183081 EDP I","183071 Análisis Funcional II"] },
+"183074 Inteligencia Artificial": { ciclo:7, prereq:["183064 Sistemas Operativos"] },
+"183083 Redes": { ciclo:7, prereq:["183064 Sistemas Operativos"] },
+"183065 Técnicas Modelamiento": { ciclo:7, prereq:["183043 Modelos Física"] },
 
-"183074 Inteligencia Artificial": { ciclo:7, prereq:["183044 Estructura de Datos"] }
+"183111 EDP II": { ciclo:8, prereq:["183081 EDP I","183071 Análisis Funcional II"] }
 
 };
 
-// ========================
+// =====================
 // ESTADO
-// ========================
+// =====================
 
 let aprobados = new Set(JSON.parse(localStorage.getItem("aprobados")) || []);
-let elements = [];
 
-// Crear nodos
-Object.entries(cursos).forEach(([nombre,data]) => {
-    elements.push({
-        data: {
-            id: nombre,
-            ciclo: data.ciclo
-        }
+// =====================
+// RENDER
+// =====================
+
+function puedeLlevar(nombre){
+    return cursos[nombre].prereq.every(pr => aprobados.has(pr));
+}
+
+function render(){
+
+    const contenedor = document.getElementById("contenedor");
+    contenedor.innerHTML="";
+
+    let ciclos = {};
+
+    Object.entries(cursos).forEach(([nombre,data])=>{
+        if(!ciclos[data.ciclo]) ciclos[data.ciclo]=[];
+        ciclos[data.ciclo].push(nombre);
     });
-});
 
-// Crear flechas
-Object.entries(cursos).forEach(([nombre,data]) => {
-    data.prereq.forEach(pr => {
-        elements.push({
-            data: { source: pr, target: nombre }
+    Object.keys(ciclos).sort((a,b)=>a-b).forEach(ciclo=>{
+        let col = document.createElement("div");
+        col.className="ciclo";
+        col.innerHTML=`<h2>Ciclo ${ciclo}</h2>`;
+
+        ciclos[ciclo].forEach(nombre=>{
+            let div = document.createElement("div");
+            div.className="curso";
+            div.innerText=nombre;
+
+            if(aprobados.has(nombre)){
+                div.classList.add("aprobado");
+            }else if(puedeLlevar(nombre)){
+                div.classList.add("disponible");
+            }
+
+            div.onclick=()=>{
+                if(puedeLlevar(nombre)){
+                    if(aprobados.has(nombre)) aprobados.delete(nombre);
+                    else aprobados.add(nombre);
+
+                    localStorage.setItem("aprobados",JSON.stringify([...aprobados]));
+                    render();
+                }
+            };
+
+            col.appendChild(div);
         });
+
+        contenedor.appendChild(col);
     });
-});
 
-// ========================
-// GRAFO
-// ========================
-
-let cy = cytoscape({
-    container: document.getElementById('cy'),
-    elements: elements,
-
-    style: [
-        {
-            selector: 'node',
-            style: {
-                'background-color': '#444',
-                'label': 'data(id)',
-                'text-wrap': 'wrap',
-                'text-max-width': 120,
-                'font-size': 9,
-                'color': '#fff',
-                'width': 45,
-                'height': 45
-            }
-        },
-        {
-            selector: 'edge',
-            style: {
-                'width': 2,
-                'line-color': '#666',
-                'target-arrow-color': '#666',
-                'target-arrow-shape': 'triangle',
-                'curve-style': 'bezier'
-            }
-        },
-        { selector: '.aprobado', style: { 'background-color': '#00ff88' } },
-        { selector: '.disponible', style: { 'background-color': '#ff2d2d' } },
-        { selector: '.cuello', style: { 'border-width': 3, 'border-color': '#ffd700' } }
-    ],
-
-    layout: {
-        name: 'breadthfirst',
-        directed: true,
-        padding: 10,
-        spacingFactor: 1.2
-    }
-});
-
-// ========================
-// LÓGICA
-// ========================
-
-function puedeLlevar(curso) {
-    return cursos[curso].prereq.every(pr => aprobados.has(pr));
+    actualizarProgreso();
 }
 
-function actualizar() {
-
-    cy.nodes().forEach(n => {
-        n.removeClass('aprobado disponible cuello');
-
-        const id = n.id();
-
-        if (aprobados.has(id)) {
-            n.addClass('aprobado');
-        } else if (puedeLlevar(id)) {
-            n.addClass('disponible');
-        }
-
-        // Detectar cuello de botella (si desbloquea 3+ cursos)
-        if (cy.edges(`[source = "${id}"]`).length >= 3) {
-            n.addClass('cuello');
-        }
-    });
-
-    // Actualizar progreso
-    let total = Object.keys(cursos).length;
-    let porcentaje = Math.round((aprobados.size / total) * 100);
-    document.getElementById("progreso").innerText =
+function actualizarProgreso(){
+    let total=Object.keys(cursos).length;
+    let porcentaje=Math.round((aprobados.size/total)*100);
+    document.getElementById("progreso").innerText=
         `Progreso: ${porcentaje}% (${aprobados.size}/${total})`;
-
-    localStorage.setItem("aprobados", JSON.stringify([...aprobados]));
 }
-
-cy.on('tap','node', evt => {
-    let id = evt.target.id();
-    if (puedeLlevar(id)) {
-        if (aprobados.has(id)) aprobados.delete(id);
-        else aprobados.add(id);
-        actualizar();
-    }
-});
 
 function resetear(){
     aprobados.clear();
-    actualizar();
+    localStorage.removeItem("aprobados");
+    render();
 }
 
-actualizar();
+render();
 
 </script>
+
 </body>
 </html>
