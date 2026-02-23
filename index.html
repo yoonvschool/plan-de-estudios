@@ -6,40 +6,43 @@
 <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 
 <style>
-body {
-  margin: 0;
-  background: #080812;
-  font-family: Arial, sans-serif;
+body{
+  margin:0;
+  background:radial-gradient(circle at center,#0f0f1f,#05050d);
+  font-family:Arial, sans-serif;
+  overflow:hidden;
 }
 
-#cy {
-  width: 100vw;
-  height: 100vh;
+#cy{
+  width:100vw;
+  height:100vh;
 }
 
-.panel {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background: rgba(0,0,0,0.85);
-  padding: 15px;
-  border-radius: 12px;
-  color: white;
-  font-size: 14px;
+.panel{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:rgba(0,0,0,0.85);
+  padding:15px;
+  border-radius:12px;
+  color:white;
+  font-size:14px;
+  backdrop-filter:blur(6px);
 }
 
-button {
-  margin-top: 8px;
-  background: #111;
-  border: 1px solid #555;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
+button{
+  margin-top:8px;
+  background:#111;
+  border:1px solid #444;
+  color:white;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:0.2s;
 }
 
-button:hover {
-  background: #222;
+button:hover{
+  background:#222;
 }
 </style>
 </head>
@@ -51,17 +54,24 @@ button:hover {
 <b>Estados</b><br>
 <span style="color:#00ff88;">■ Aprobado</span><br>
 <span style="color:#00aaff;">■ Disponible</span><br>
-<span style="color:#555;">■ Bloqueado</span><br>
+<span style="color:#666;">■ Bloqueado</span><br>
 <button onclick="resetear()">Resetear</button>
 </div>
 
 <script>
 
 // =============================
-// CURSOS COMPLETOS
+// CURSOS (CICLO 0 VA DESPUÉS DEL 10)
 // =============================
 
 const cursos = {
+
+// CICLO 0
+"183111": {nombre:"Ecuaciones Diferenciales Parciales II", ciclo:0, prereq:["183081","183071"]},
+"183112": {nombre:"Análisis Complejo y Aplicado", ciclo:0, prereq:["183051"]},
+"183113": {nombre:"Ecuaciones Integrales", ciclo:0, prereq:["183081"]},
+"183114": {nombre:"Análisis Complejo en CN", ciclo:0, prereq:["183112"]},
+"183115": {nombre:"Problemas Inversos", ciclo:0, prereq:["1803052"]}
 
 // CICLO 1
 "CBE003": {nombre:"Economía General", ciclo:1, prereq:[]},
@@ -133,37 +143,36 @@ const cursos = {
 "183103": {nombre:"Práctica Pre Profesional", ciclo:10, prereq:[]},
 "183104": {nombre:"Presentación y Sustentación del Proyecto", ciclo:10, prereq:["183094"]},
 
-// CICLO 0
-"183111": {nombre:"Ecuaciones Diferenciales Parciales II", ciclo:0, prereq:["183081","183071"]},
-"183112": {nombre:"Análisis Complejo y Aplicado", ciclo:0, prereq:["183051"]},
-"183113": {nombre:"Ecuaciones Integrales", ciclo:0, prereq:["183081"]},
-"183114": {nombre:"Análisis Complejo en CN", ciclo:0, prereq:["183112"]},
-"183115": {nombre:"Problemas Inversos", ciclo:0, prereq:["1803052"]}
-
 };
 
-// =============================
-// GRAFO
-// =============================
+<script>
 
 let aprobados = new Set(JSON.parse(localStorage.getItem("aprobados") || "[]"));
 const elements = [];
-const spacingX = 260;
-const spacingY = 100;
+const spacingX = 300;
+const spacingY = 110;
 const contador = {};
 
-Object.entries(cursos).forEach(([id,data]) => {
-  if(!contador[data.ciclo]) contador[data.ciclo] = 0;
+// Mapeo visual: ciclo 0 será el último
+function posicionCiclo(ciclo){
+  if(ciclo === 0) return 11; // después del 10
+  return ciclo;
+}
+
+Object.entries(cursos).forEach(([id,data])=>{
+  const cicloVisual = posicionCiclo(data.ciclo);
+
+  if(!contador[cicloVisual]) contador[cicloVisual]=0;
 
   elements.push({
     data:{id:id,label:data.nombre},
     position:{
-      x:(data.ciclo+1)*spacingX,
-      y:contador[data.ciclo]*spacingY+50
+      x:cicloVisual*spacingX,
+      y:contador[cicloVisual]*spacingY+80
     }
   });
 
-  contador[data.ciclo]++;
+  contador[cicloVisual]++;
 
   data.prereq.forEach(p=>{
     elements.push({data:{source:p,target:id}});
@@ -174,26 +183,50 @@ const cy = cytoscape({
   container: document.getElementById('cy'),
   elements: elements,
   layout:{name:'preset'},
+  minZoom:0.4,
+  maxZoom:2.5,
+  wheelSensitivity:0.2,
   style:[
-    {selector:'node',style:{
-      'background-color':'#444',
-      'label':'data(label)',
-      'color':'white',
-      'text-wrap':'wrap',
-      'text-max-width':150,
-      'width':170,
-      'height':55,
-      'shape':'roundrectangle',
-      'font-size':9
-    }},
-    {selector:'edge',style:{
-      'width':2,
-      'line-color':'#555',
-      'target-arrow-color':'#555',
-      'target-arrow-shape':'triangle'
-    }}
+    {
+      selector:'node',
+      style:{
+        'label':'data(label)',
+        'text-wrap':'wrap',
+        'text-max-width':150,
+        'text-valign':'center',
+        'text-halign':'center',
+        'font-size':10,
+        'color':'white',
+        'width':180,
+        'height':60,
+        'shape':'roundrectangle',
+        'background-fill':'linear-gradient',
+        'background-gradient-stop-colors':'#3a3a4f #1a1a2e',
+        'background-gradient-stop-positions':'0% 100%',
+        'border-width':2,
+        'border-color':'#555',
+        'shadow-blur':20,
+        'shadow-color':'#000',
+        'shadow-offset-x':4,
+        'shadow-offset-y':6
+      }
+    },
+    {
+      selector:'edge',
+      style:{
+        'width':2,
+        'curve-style':'bezier',
+        'line-color':'#444',
+        'target-arrow-color':'#444',
+        'target-arrow-shape':'triangle'
+      }
+    }
   ]
 });
+
+// =============================
+// ESTADOS VISUALES
+// =============================
 
 function actualizar(){
   cy.nodes().forEach(n=>{
@@ -201,18 +234,28 @@ function actualizar(){
     const req=cursos[id].prereq;
 
     if(aprobados.has(id)){
-      n.style('background-color','#00ff88');
-      n.style('box-shadow','0 0 25px #00ff88');
+      n.style({
+        'background-gradient-stop-colors':'#00ff88 #007744',
+        'border-color':'#00ff88',
+        'shadow-color':'#00ff88'
+      });
     }
     else if(req.every(r=>aprobados.has(r))){
-      n.style('background-color','#00aaff');
-      n.style('box-shadow','0 0 25px #00aaff');
+      n.style({
+        'background-gradient-stop-colors':'#00aaff #003366',
+        'border-color':'#00aaff',
+        'shadow-color':'#00aaff'
+      });
     }
     else{
-      n.style('background-color','#444');
-      n.style('box-shadow','none');
+      n.style({
+        'background-gradient-stop-colors':'#3a3a4f #1a1a2e',
+        'border-color':'#555',
+        'shadow-color':'#000'
+      });
     }
   });
+
   localStorage.setItem("aprobados",JSON.stringify([...aprobados]));
 }
 
